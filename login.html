@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - IshFinance</title>
+
+  <!-- Favicon (SVG inline) -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='url(%23g)'/%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%233b82f6'/%3E%3Cstop offset='1' stop-color='%236366f1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none' d='M16 10c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M16 10V9m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1'/%3E%3C/svg%3E">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="styles.css">
+  
+  <style>
+    /* Blobs */
+    .blob-1 {
+      position: fixed; width: 400px; height: 400px; background: #6366f1; border-radius: 50%; filter: blur(100px); top: -50px; left: -50px; opacity: 0.5; animation: float 10s infinite alternate; z-index: 0;
+    }
+    .blob-2 {
+      position: fixed; width: 350px; height: 350px; background: #ec4899; border-radius: 50%; filter: blur(100px); bottom: -50px; right: -50px; opacity: 0.4; animation: float 12s infinite alternate-reverse; z-index: 0;
+    }
+    @keyframes float { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(50px, 50px) scale(1.1); } }
+
+    /* Modal animation */
+    @keyframes modalPop {
+      from { opacity: 0; transform: scale(0.92) translateY(20px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-pop { animation: modalPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center relative text-slate-200 p-4">
+
+  <!-- Background Animated Blobs -->
+  <div class="blob-1"></div>
+  <div class="blob-2"></div>
+
+  <!-- Login Container -->
+  <div class="relative z-10 w-full max-w-md px-6">
+    <div class="glass-panel rounded-3xl p-8 sm:p-10 w-full animate-fade-in-up">
+      
+      <!-- Header -->
+      <div class="text-center mb-8">
+        <div class="flex justify-center mb-4">
+          <div class="bg-gradient-to-tr from-blue-500 to-indigo-500 rounded-xl p-3 shadow-lg flex items-center justify-center">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          </div>
+        </div>
+        <h2 class="text-3xl font-bold text-white mb-2 tracking-tight">Welcome Back</h2>
+        <p class="text-slate-400 text-sm font-medium">Log in to IshFinance safely</p>
+      </div>
+
+      <!-- Error Alert -->
+      <div id="error-alert" class="hidden bg-red-500/10 border border-red-500/50 text-red-400 rounded-lg p-4 mb-6 text-sm font-medium flex items-center">
+        <svg class="h-5 w-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
+        <span id="error-text">Authentication Error</span>
+      </div>
+
+      <!-- Form -->
+      <form id="auth-form" class="space-y-6">
+        <div class="space-y-1">
+          <label for="email" class="text-sm font-semibold text-slate-300 ml-1">Email Address</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" /></svg>
+            </div>
+            <input type="email" id="email" required class="input-field block w-full pl-10 pr-3 py-3 border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-0 sm:text-sm" placeholder="you@example.com">
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <div class="flex items-center justify-between ml-1">
+            <label for="password" class="text-sm font-semibold text-slate-300">Password</label>
+            <button type="button" id="forgot-password-btn" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">Forgot password?</button>
+          </div>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+            </div>
+            <input type="password" id="password" required class="input-field block w-full pl-10 pr-3 py-3 border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-0 sm:text-sm" placeholder="••••••••">
+          </div>
+        </div>
+
+        <div>
+          <button type="submit" id="btn-submit" class="btn-primary w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:ring-offset-slate-900 mt-2">
+            Sign In
+          </button>
+        </div>
+      </form>
+
+      <!-- Footer -->
+      <div class="mt-8 text-center">
+        <p class="text-sm text-slate-400 font-medium">
+          Don't have an account? 
+          <a href="signup.html" class="font-bold text-indigo-400 hover:text-white transition-colors">Create an account</a>
+        </p>
+      </div>
+      
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ FORGOT PASSWORD MODAL ═══════════ -->
+  <div id="forgot-modal" class="fixed inset-0 z-50 hidden items-center justify-center px-4">
+    <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" id="forgot-modal-bg"></div>
+    <div class="relative glass-panel rounded-3xl p-8 max-w-md w-full shadow-2xl modal-pop">
+
+      <!-- Step 1: Enter email -->
+      <div id="fp-step-email">
+        <div class="text-center mb-6">
+          <div class="w-16 h-16 bg-indigo-500/20 text-indigo-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-indigo-500/20">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+          </div>
+          <h3 class="text-2xl font-bold text-white tracking-tight mb-1">Reset Password</h3>
+          <p class="text-sm text-slate-400">Enter your email and we'll send you a reset link.</p>
+        </div>
+
+        <!-- FP Error -->
+        <div id="fp-error" class="hidden bg-red-500/10 border border-red-500/40 text-red-400 rounded-xl p-3 mb-4 text-xs font-medium flex items-center gap-2">
+          <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+          <span id="fp-error-text"></span>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-semibold text-slate-300 mb-1 ml-1">Email Address</label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/></svg>
+              </div>
+              <input type="email" id="fp-email" class="input-field block w-full pl-10 pr-3 py-3 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm" placeholder="your@email.com">
+            </div>
+          </div>
+
+          <button id="fp-send-btn" class="btn-primary w-full py-3.5 rounded-xl font-bold text-white text-sm shadow-lg flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+            Send Reset Link
+          </button>
+
+          <button type="button" id="fp-cancel-btn" class="w-full py-3 rounded-xl font-semibold text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all text-sm">
+            Cancel
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 2: Success -->
+      <div id="fp-step-success" class="hidden text-center">
+        <div class="w-20 h-20 bg-emerald-500/20 rounded-3xl flex items-center justify-center mx-auto mb-5 shadow-lg shadow-emerald-500/20">
+          <svg class="w-10 h-10 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <h3 class="text-2xl font-bold text-white mb-2">Check Your Inbox!</h3>
+        <p class="text-sm text-slate-400 mb-2">A password reset link has been sent to:</p>
+        <p id="fp-sent-to" class="text-sm font-bold text-indigo-400 mb-6 bg-indigo-500/10 px-4 py-2 rounded-xl border border-indigo-500/20 inline-block"></p>
+        <p class="text-xs text-slate-500 mb-6">Click the link in the email to set a new password. Check your spam folder if you don't see it.</p>
+        <button id="fp-done-btn" class="btn-primary w-full py-3.5 rounded-xl font-bold text-white text-sm">
+          Back to Login
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Core Logic Scripts -->
+  <script src="supabase-client.js"></script>
+  <script src="auth.js"></script>
+  <script>
+    // ── Forgot Password Modal Logic ──
+    const forgotModal    = document.getElementById('forgot-modal');
+    const forgotBtn      = document.getElementById('forgot-password-btn');
+    const fpCancelBtn    = document.getElementById('fp-cancel-btn');
+    const fpModalBg      = document.getElementById('forgot-modal-bg');
+    const fpSendBtn      = document.getElementById('fp-send-btn');
+    const fpDoneBtn      = document.getElementById('fp-done-btn');
+    const fpStepEmail    = document.getElementById('fp-step-email');
+    const fpStepSuccess  = document.getElementById('fp-step-success');
+    const fpError        = document.getElementById('fp-error');
+    const fpErrorText    = document.getElementById('fp-error-text');
+    const fpSentTo       = document.getElementById('fp-sent-to');
+    const fpEmailInput   = document.getElementById('fp-email');
+
+    function openForgotModal() {
+      // Pre-fill with login email if exists
+      const loginEmail = document.getElementById('email').value.trim();
+      if (loginEmail) fpEmailInput.value = loginEmail;
+
+      fpStepEmail.classList.remove('hidden');
+      fpStepSuccess.classList.add('hidden');
+      fpError.classList.add('hidden');
+      forgotModal.classList.remove('hidden');
+      forgotModal.classList.add('flex');
+      setTimeout(() => fpEmailInput.focus(), 100);
+    }
+
+    function closeForgotModal() {
+      forgotModal.classList.add('hidden');
+      forgotModal.classList.remove('flex');
+      fpEmailInput.value = '';
+      fpError.classList.add('hidden');
+    }
+
+    forgotBtn.addEventListener('click', openForgotModal);
+    fpCancelBtn.addEventListener('click', closeForgotModal);
+    fpModalBg.addEventListener('click', closeForgotModal);
+    fpDoneBtn.addEventListener('click', closeForgotModal);
+
+    // Enter key triggers send
+    fpEmailInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); fpSendBtn.click(); }
+    });
+
+    fpSendBtn.addEventListener('click', async () => {
+      const email = fpEmailInput.value.trim();
+
+      // Validate
+      if (!email || !email.includes('@')) {
+        fpError.classList.remove('hidden');
+        fpErrorText.textContent = 'Please enter a valid email address.';
+        return;
+      }
+
+      // Loading state
+      fpSendBtn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Sending...';
+      fpSendBtn.disabled = true;
+      fpError.classList.add('hidden');
+
+      try {
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.href.replace(/\/[^/]*$/, '/') + 'update-password.html'
+        });
+
+        if (error) throw error;
+
+        // Show success
+        fpSentTo.textContent = email;
+        fpStepEmail.classList.add('hidden');
+        fpStepSuccess.classList.remove('hidden');
+
+      } catch (err) {
+        fpError.classList.remove('hidden');
+        fpErrorText.textContent = err.message || 'Something went wrong. Please try again.';
+      } finally {
+        fpSendBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Send Reset Link';
+        fpSendBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

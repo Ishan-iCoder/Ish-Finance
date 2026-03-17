@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IshFinance - Smart Personal Finance</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='url(%23g)'/%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%233b82f6'/%3E%3Cstop offset='1' stop-color='%236366f1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none' d='M16 10c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M16 10V9m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1'/%3E%3C/svg%3E">
+    <meta name="description" content="Take full control of your money. Track expenses, set budgets, achieve savings goals — all in one beautiful dashboard.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Outfit', sans-serif; }
+
+        body {
+            background: #0a0f1e;
+            overflow-x: hidden;
+        }
+
+        /* ── Animated mesh gradient background ── */
+        .hero-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background: radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.15) 0%, transparent 60%),
+                        radial-gradient(ellipse at 80% 20%, rgba(59,130,246,0.12) 0%, transparent 55%),
+                        radial-gradient(ellipse at 60% 80%, rgba(139,92,246,0.1) 0%, transparent 55%),
+                        #0a0f1e;
+        }
+
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            animation: floatOrb 8s ease-in-out infinite alternate;
+            pointer-events: none;
+        }
+        .orb-1 { width: 600px; height: 600px; background: radial-gradient(circle, rgba(99,102,241,0.25) 0%, transparent 70%); top: -200px; left: -100px; animation-delay: 0s; }
+        .orb-2 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(59,130,246,0.2) 0%, transparent 70%); top: 40%; right: -150px; animation-delay: -3s; }
+        .orb-3 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%); bottom: -100px; left: 30%; animation-delay: -5s; }
+
+        @keyframes floatOrb {
+            from { transform: translate(0, 0) scale(1); }
+            to   { transform: translate(30px, -40px) scale(1.05); }
+        }
+
+        /* ── Glass card ── */
+        .glass {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .glass-light {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+
+        /* ── Gradient text ── */
+        .gradient-text {
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #f472b6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .gradient-text-2 {
+            background: linear-gradient(135deg, #34d399 0%, #60a5fa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ── Btn Primary ── */
+        .btn-hero {
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, #60a5fa, #818cf8);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .btn-hero:hover::before { opacity: 1; }
+        .btn-hero:hover { transform: translateY(-2px); box-shadow: 0 20px 40px rgba(99,102,241,0.4); }
+        .btn-hero span { position: relative; z-index: 1; }
+
+        .btn-ghost {
+            border: 1px solid rgba(255,255,255,0.15);
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.05);
+        }
+        .btn-ghost:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.25);
+            transform: translateY(-2px);
+        }
+
+        /* ── Floating cards animation ── */
+        .float-card { animation: floatCard 6s ease-in-out infinite; }
+        .float-card-2 { animation: floatCard 7s 1.5s ease-in-out infinite; }
+        .float-card-3 { animation: floatCard 5s 3s ease-in-out infinite; }
+
+        @keyframes floatCard {
+            0%, 100% { transform: translateY(0px) rotate(var(--rot, 0deg)); }
+            50%       { transform: translateY(-12px) rotate(var(--rot, 0deg)); }
+        }
+
+        /* ── Stat counter ── */
+        .stat-number { animation: countUp 0.8s ease-out forwards; }
+
+        /* ── Feature card hover ── */
+        .feature-card {
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .feature-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(99,102,241,0.4) !important;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(99,102,241,0.2);
+        }
+        .feature-card:hover .feature-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+        .feature-icon { transition: transform 0.3s ease; }
+
+        /* ── Mini bar chart ── */
+        .bar { animation: growBar 1s ease-out forwards; transform-origin: bottom; }
+        @keyframes growBar {
+            from { transform: scaleY(0); }
+            to   { transform: scaleY(1); }
+        }
+
+        /* ── Scroll reveal ── */
+        .reveal { opacity: 0; transform: translateY(40px); transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+
+        /* ── Progress bar ── */
+        .progress-fill { animation: fillProgress 1.5s 0.5s ease-out forwards; width: 0; }
+        @keyframes fillProgress {
+            to { width: var(--target); }
+        }
+
+        /* ── Grid dot pattern ── */
+        .dot-pattern {
+            background-image: radial-gradient(rgba(99,102,241,0.15) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        /* ── Pulse ring ── */
+        .pulse-ring {
+            animation: pulseRing 2s ease infinite;
+        }
+        @keyframes pulseRing {
+            0% { box-shadow: 0 0 0 0 rgba(99,102,241,0.4); }
+            70% { box-shadow: 0 0 0 20px rgba(99,102,241,0); }
+            100% { box-shadow: 0 0 0 0 rgba(99,102,241,0); }
+        }
+
+        /* ── Ticker tape ── */
+        .ticker-inner { animation: ticker 20s linear infinite; }
+        @keyframes ticker {
+            from { transform: translateX(100%); }
+            to   { transform: translateX(-100%); }
+        }
+
+        /* Smooth scrolling */
+        html { scroll-behavior: smooth; }
+
+        /* ── Nav glow ── */
+        .nav-glow {
+            box-shadow: 0 1px 0 rgba(255,255,255,0.05), 0 4px 24px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body class="text-slate-100 antialiased">
+
+    <!-- Background -->
+    <div class="hero-bg"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <!-- ════════════════════════════════════════════ NAVBAR ════════ -->
+    <nav class="fixed top-0 left-0 right-0 z-50 glass nav-glow">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16 sm:h-20">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 bg-gradient-to-tr from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30 pulse-ring">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <span class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300">IshFinance</span>
+                </div>
+
+                <!-- Nav Links (desktop) -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#features" class="text-sm font-medium text-slate-400 hover:text-white transition-colors">Features</a>
+                    <a href="#stats" class="text-sm font-medium text-slate-400 hover:text-white transition-colors">Why Us</a>
+                    <a href="#cta" class="text-sm font-medium text-slate-400 hover:text-white transition-colors">Get Started</a>
+                </div>
+
+                <!-- CTA Buttons -->
+                <div class="flex items-center space-x-3">
+                    <a href="login.html" class="btn-ghost px-4 py-2 rounded-xl text-sm font-semibold text-slate-300 hover:text-white">
+                        Log In
+                    </a>
+                    <a href="signup.html" class="btn-hero px-5 py-2.5 rounded-xl text-sm font-bold text-white shadow-lg">
+                        <span>Get Started →</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ════════════════════════════════════════════ HERO ════════ -->
+    <section class="relative z-10 pt-28 sm:pt-36 pb-20 px-6 sm:px-10 lg:px-16 min-h-screen flex items-center">
+        <div class="max-w-7xl mx-auto w-full">
+            <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+
+                <!-- Left: Copy -->
+                <div class="text-center lg:text-left">
+                    <!-- Badge -->
+                    <div class="inline-flex items-center space-x-2 glass-light px-4 py-2 rounded-full mb-8 border border-indigo-500/20">
+                        <span class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
+                        <span class="text-xs font-semibold text-slate-300 tracking-wider uppercase">Your Personal Finance Hub</span>
+                    </div>
+
+                    <!-- Headline -->
+                    <h1 class="text-5xl sm:text-6xl lg:text-7xl font-black leading-none tracking-tight mb-6">
+                        <span class="text-white">Master</span><br>
+                        <span class="gradient-text">Your Money.</span><br>
+                        <span class="text-white">Build</span>
+                        <span class="text-slate-400"> Your</span><br>
+                        <span class="gradient-text-2">Future.</span>
+                    </h1>
+
+                    <!-- Subheadline -->
+                    <p class="text-lg sm:text-xl text-slate-400 font-medium leading-relaxed mb-10 max-w-lg mx-auto lg:mx-0">
+                        Track every rupee, smash your budgets, and hit savings goals — with a dashboard so beautiful, you'll <em class="text-slate-300 not-italic">actually</em> want to check it every day.
+                    </p>
+
+                    <!-- CTA Row -->
+                    <div class="flex flex-col sm:flex-row items-center lg:items-start gap-4 justify-center lg:justify-start">
+                        <a href="signup.html" class="btn-hero w-full sm:w-auto px-8 py-4 rounded-2xl text-base font-bold text-white shadow-2xl shadow-indigo-500/30 flex items-center justify-center gap-2">
+                            <span>Start for Free</span>
+                            <svg class="w-5 h-5 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                        </a>
+                        <a href="login.html" class="btn-ghost w-full sm:w-auto px-8 py-4 rounded-2xl text-base font-bold text-slate-300 flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+                            Sign In
+                        </a>
+                    </div>
+
+                    <!-- Social proof -->
+                    <div class="flex items-center gap-4 mt-10 justify-center lg:justify-start">
+                        <div class="flex -space-x-2">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 border-2 border-slate-900 flex items-center justify-center text-xs font-bold">A</div>
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 border-2 border-slate-900 flex items-center justify-center text-xs font-bold">K</div>
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 border-2 border-slate-900 flex items-center justify-center text-xs font-bold">S</div>
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 border-2 border-slate-900 flex items-center justify-center text-xs font-bold">R</div>
+                        </div>
+                        <p class="text-sm text-slate-400">Trusted by <span class="text-white font-semibold">1,000+</span> smart savers</p>
+                    </div>
+                </div>
+
+                <!-- Right: Dashboard Preview Cards -->
+                <div class="relative hidden lg:block">
+                    <!-- Main dashboard card -->
+                    <div class="glass rounded-3xl p-6 shadow-2xl float-card relative" style="--rot: -2deg;">
+                        <!-- Mini header -->
+                        <div class="flex items-center justify-between mb-5">
+                            <div>
+                                <p class="text-xs text-slate-500 font-medium uppercase tracking-wider">Total Balance</p>
+                                <p class="text-3xl font-black text-white mt-1">Rs 487,250<span class="text-slate-500 text-lg font-medium">.00</span></p>
+                            </div>
+                            <div class="flex flex-col items-end">
+                                <span class="text-xs text-emerald-400 font-bold bg-emerald-400/10 px-3 py-1 rounded-full">↑ +12.4%</span>
+                                <span class="text-xs text-slate-500 mt-1">vs last month</span>
+                            </div>
+                        </div>
+
+                        <!-- Mini bar chart -->
+                        <div class="glass-light rounded-2xl p-4 mb-4">
+                            <div class="flex items-end gap-1.5 h-16 justify-between px-2">
+                                <div class="bar flex-1 bg-indigo-500/30 rounded-t-lg" style="height:40%; animation-delay:0.1s;"></div>
+                                <div class="bar flex-1 bg-indigo-500/30 rounded-t-lg" style="height:65%; animation-delay:0.2s;"></div>
+                                <div class="bar flex-1 bg-indigo-500/40 rounded-t-lg" style="height:45%; animation-delay:0.3s;"></div>
+                                <div class="bar flex-1 bg-indigo-500/40 rounded-t-lg" style="height:80%; animation-delay:0.4s;"></div>
+                                <div class="bar flex-1 bg-indigo-500/50 rounded-t-lg" style="height:55%; animation-delay:0.5s;"></div>
+                                <div class="bar flex-1 bg-indigo-500 rounded-t-lg" style="height:90%; animation-delay:0.6s;"></div>
+                                <div class="bar flex-1 bg-blue-400 rounded-t-lg" style="height:70%; animation-delay:0.7s;"></div>
+                            </div>
+                            <p class="text-xs text-slate-500 text-center mt-2 font-medium">Monthly Spending Trend</p>
+                        </div>
+
+                        <!-- Mini stats row -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="glass-light rounded-2xl p-3">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <div class="w-6 h-6 bg-emerald-400/20 rounded-lg flex items-center justify-center">
+                                        <svg class="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+                                    </div>
+                                    <span class="text-xs text-slate-500">Income</span>
+                                </div>
+                                <p class="text-base font-bold text-emerald-400">Rs 95,000</p>
+                            </div>
+                            <div class="glass-light rounded-2xl p-3">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <div class="w-6 h-6 bg-pink-400/20 rounded-lg flex items-center justify-center">
+                                        <svg class="w-3 h-3 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+                                    </div>
+                                    <span class="text-xs text-slate-500">Expenses</span>
+                                </div>
+                                <p class="text-base font-bold text-pink-400">Rs 42,350</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Floating budget card -->
+                    <div class="glass rounded-2xl p-4 shadow-xl absolute -bottom-8 -left-10 w-56 float-card-2" style="--rot: 3deg;">
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-8 h-8 bg-violet-500/20 rounded-xl flex items-center justify-center">
+                                <svg class="w-4 h-4 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/></svg>
+                            </div>
+                            <span class="text-sm font-semibold text-white">Food Budget</span>
+                        </div>
+                        <div class="mb-2">
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-400">Rs 28,000 spent</span>
+                                <span class="text-violet-400 font-bold">72%</span>
+                            </div>
+                            <div class="w-full h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                                <div class="progress-fill h-full bg-gradient-to-r from-violet-500 to-purple-400 rounded-full" style="--target: 72%;"></div>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-500">Rs 10,800 remaining</p>
+                    </div>
+
+                    <!-- Floating savings card -->
+                    <div class="glass rounded-2xl p-4 shadow-xl absolute -top-6 -right-8 w-52 float-card-3" style="--rot: -1deg;">
+                        <div class="flex items-center gap-2 mb-2">
+                            <div class="w-8 h-8 bg-amber-400/20 rounded-xl flex items-center justify-center">
+                                <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-white">New iPhone</p>
+                                <p class="text-xs text-slate-500">Goal: Rs 250,000</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                                <div class="progress-fill h-full bg-gradient-to-r from-amber-400 to-orange-400 rounded-full" style="--target: 64%;"></div>
+                            </div>
+                            <span class="text-xs font-bold text-amber-400">64%</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════ TICKER ════════ -->
+    <div class="relative z-10 border-y border-slate-800/60 glass py-3 overflow-hidden">
+        <div class="ticker-inner flex items-center gap-12 whitespace-nowrap text-sm font-semibold">
+            <span class="text-slate-500">💰 Track Every Rupee</span>
+            <span class="text-indigo-400">•</span>
+            <span class="text-slate-500">📊 Smart Budgets</span>
+            <span class="text-indigo-400">•</span>
+            <span class="text-slate-500">🎯 Savings Goals</span>
+            <span class="text-indigo-400">•</span>
+            <span class="text-slate-500">📈 Real-time Analytics</span>
+            <span class="text-indigo-400">•</span>
+            <span class="text-slate-500">🔒 Secure & Private</span>
+            <span class="text-indigo-400">•</span>
+            <span class="text-slate-500">✨ Beautiful Dashboard</span>
+            <span class="text-indigo-400">•</span>
+            <span class="text-slate-500">💰 Track Every Rupee</span>
+            <span class="text-indigo-400">•</span>
+            <span class="text-slate-500">📊 Smart Budgets</span>
+            <span class="text-indigo-400">•</span>
+            <span class="text-slate-500">🎯 Savings Goals</span>
+            <span class="text-indigo-400">•</span>
+            <span class="text-slate-500">📈 Real-time Analytics</span>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════ STATS ════════ -->
+    <section id="stats" class="relative z-10 py-24 px-4">
+        <div class="max-w-5xl mx-auto">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div class="reveal glass rounded-3xl p-6 text-center border border-indigo-500/10 hover:border-indigo-500/30 transition-colors">
+                    <p class="text-4xl sm:text-5xl font-black gradient-text mb-2">1K+</p>
+                    <p class="text-sm text-slate-400 font-medium">Active Users</p>
+                </div>
+                <div class="reveal glass rounded-3xl p-6 text-center border border-blue-500/10 hover:border-blue-500/30 transition-colors" style="transition-delay:0.1s">
+                    <p class="text-4xl sm:text-5xl font-black gradient-text-2 mb-2">Rs 50M+</p>
+                    <p class="text-sm text-slate-400 font-medium">Tracked</p>
+                </div>
+                <div class="reveal glass rounded-3xl p-6 text-center border border-violet-500/10 hover:border-violet-500/30 transition-colors" style="transition-delay:0.2s">
+                    <p class="text-4xl sm:text-5xl font-black gradient-text mb-2">10K+</p>
+                    <p class="text-sm text-slate-400 font-medium">Budgets set</p>
+                </div>
+                <div class="reveal glass rounded-3xl p-6 text-center border border-emerald-500/10 hover:border-emerald-500/30 transition-colors" style="transition-delay:0.3s">
+                    <p class="text-4xl sm:text-5xl font-black gradient-text-2 mb-2">100%</p>
+                    <p class="text-sm text-slate-400 font-medium">Private & secure</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════ FEATURES ════════ -->
+    <section id="features" class="relative z-10 py-12 pb-20 px-4">
+        <div class="max-w-7xl mx-auto">
+
+            <!-- Section header -->
+            <div class="text-center mb-20 reveal">
+                <div class="inline-flex items-center space-x-2 glass-light px-4 py-2 rounded-full mb-6 border border-indigo-500/20">
+                    <span class="text-xs font-semibold text-indigo-400 tracking-wider uppercase">Everything You Need</span>
+                </div>
+                <h2 class="text-4xl sm:text-5xl font-black text-white mb-4">
+                    Powerful features,<br><span class="gradient-text">beautifully simple.</span>
+                </h2>
+                <p class="text-lg text-slate-400 max-w-2xl mx-auto">Every tool you need to take control of your financial life — designed to be a joy to use.</p>
+            </div>
+
+            <!-- Feature grid -->
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                <!-- Dashboard -->
+                <div class="feature-card reveal glass rounded-3xl p-8 border border-slate-700/40 cursor-default">
+                    <div class="feature-icon w-14 h-14 bg-gradient-to-br from-blue-500/20 to-indigo-500/20 rounded-2xl flex items-center justify-center mb-5 border border-blue-500/20">
+                        <svg class="w-7 h-7 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2">Live Dashboard</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">See your complete financial picture at a glance — balance, spending, income and goals all in one stunning view.</p>
+                    <div class="mt-5 flex items-center gap-2 text-blue-400 text-sm font-semibold group">
+                        <span>Explore</span>
+                        <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                    </div>
+                </div>
+
+                <!-- Transactions -->
+                <div class="feature-card reveal glass rounded-3xl p-8 border border-slate-700/40 cursor-default" style="transition-delay:0.1s">
+                    <div class="feature-icon w-14 h-14 bg-gradient-to-br from-violet-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center mb-5 border border-violet-500/20">
+                        <svg class="w-7 h-7 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2">Smart Transactions</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">Log income, expenses and transfers. Auto-updates your account balances. Search and filter with ease.</p>
+                    <div class="mt-5 flex items-center gap-2 text-violet-400 text-sm font-semibold group">
+                        <span>Explore</span>
+                        <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                    </div>
+                </div>
+
+                <!-- Budgets -->
+                <div class="feature-card reveal glass rounded-3xl p-8 border border-slate-700/40 cursor-default" style="transition-delay:0.2s">
+                    <div class="feature-icon w-14 h-14 bg-gradient-to-br from-pink-500/20 to-rose-500/20 rounded-2xl flex items-center justify-center mb-5 border border-pink-500/20">
+                        <svg class="w-7 h-7 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2">Budget Control</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">Set monthly limits per category. Visual progress bars keep you on track — get alerts before you overspend.</p>
+                    <div class="mt-5 flex items-center gap-2 text-pink-400 text-sm font-semibold group">
+                        <span>Explore</span>
+                        <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                    </div>
+                </div>
+
+                <!-- Savings -->
+                <div class="feature-card reveal glass rounded-3xl p-8 border border-slate-700/40 cursor-default" style="transition-delay:0.3s">
+                    <div class="feature-icon w-14 h-14 bg-gradient-to-br from-amber-500/20 to-orange-500/20 rounded-2xl flex items-center justify-center mb-5 border border-amber-500/20">
+                        <svg class="w-7 h-7 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2">Savings Goals</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">Dream big and plan smart. Set savings goals, track progress and celebrate every milestone on the way.</p>
+                    <div class="mt-5 flex items-center gap-2 text-amber-400 text-sm font-semibold group">
+                        <span>Explore</span>
+                        <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                    </div>
+                </div>
+
+                <!-- Accounts -->
+                <div class="feature-card reveal glass rounded-3xl p-8 border border-slate-700/40 cursor-default" style="transition-delay:0.4s">
+                    <div class="feature-icon w-14 h-14 bg-gradient-to-br from-emerald-500/20 to-teal-500/20 rounded-2xl flex items-center justify-center mb-5 border border-emerald-500/20">
+                        <svg class="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2">Multi-Account</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">Manage all your bank accounts, cash wallets, and credit cards in one place with live balance tracking.</p>
+                    <div class="mt-5 flex items-center gap-2 text-emerald-400 text-sm font-semibold group">
+                        <span>Explore</span>
+                        <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                    </div>
+                </div>
+
+                <!-- Categories -->
+                <div class="feature-card reveal glass rounded-3xl p-8 border border-slate-700/40 cursor-default" style="transition-delay:0.5s">
+                    <div class="feature-icon w-14 h-14 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-2xl flex items-center justify-center mb-5 border border-cyan-500/20">
+                        <svg class="w-7 h-7 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2">Custom Categories</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">Create your own spending categories with custom colors. Personalize IshFinance to fit your lifestyle.</p>
+                    <div class="mt-5 flex items-center gap-2 text-cyan-400 text-sm font-semibold group">
+                        <span>Explore</span>
+                        <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════ CTA ════════ -->
+    <section id="cta" class="relative z-10 py-20 px-4">
+        <div class="max-w-4xl mx-auto reveal">
+            <div class="glass rounded-3xl sm:rounded-[2.5rem] p-10 sm:p-16 text-center border border-indigo-500/20 relative overflow-hidden dot-pattern">
+                <!-- Glow -->
+                <div class="absolute inset-0 bg-gradient-to-b from-indigo-500/5 to-transparent pointer-events-none"></div>
+
+                <div class="relative z-10">
+                    <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-indigo-500/40 pulse-ring">
+                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+
+                    <h2 class="text-4xl sm:text-5xl font-black text-white mb-4">Take control today.</h2>
+                    <p class="text-lg text-slate-400 mb-10 max-w-xl mx-auto">Join thousands of smart savers who've transformed their finances with IshFinance. It's free, it's beautiful, and it's yours.</p>
+
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                        <a href="signup.html" class="btn-hero px-10 py-4 rounded-2xl text-base font-bold text-white shadow-2xl shadow-indigo-500/30 flex items-center justify-center gap-2">
+                            <span>Create Free Account</span>
+                            <svg class="w-5 h-5 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                        </a>
+                        <a href="login.html" class="btn-ghost px-10 py-4 rounded-2xl text-base font-bold text-slate-300 flex items-center justify-center gap-2">
+                            Already have an account?
+                        </a>
+                    </div>
+
+                    <!-- Trust badges -->
+                    <div class="flex items-center justify-center gap-8 mt-10 flex-wrap">
+                        <div class="flex items-center gap-2 text-slate-500 text-sm">
+                            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            No credit card needed
+                        </div>
+                        <div class="flex items-center gap-2 text-slate-500 text-sm">
+                            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            100% private data
+                        </div>
+                        <div class="flex items-center gap-2 text-slate-500 text-sm">
+                            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            Free forever
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════ FOOTER ════════ -->
+    <footer class="relative z-10 border-t border-slate-800/50 py-10 px-4">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 bg-gradient-to-tr from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <span class="font-bold text-slate-400">IshFinance</span>
+            </div>
+            <p class="text-sm text-slate-600">© 2026 IshFinance. Built with ❤️ for smart savers.</p>
+            <div class="flex items-center gap-6">
+                <a href="login.html" class="text-sm text-slate-500 hover:text-slate-300 transition-colors">Login</a>
+                <a href="signup.html" class="text-sm text-slate-500 hover:text-slate-300 transition-colors">Sign Up</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // ── Scroll reveal ──
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry, i) => {
+                if (entry.isIntersecting) {
+                    const delay = entry.target.style.transitionDelay || '0s';
+                    setTimeout(() => {
+                        entry.target.classList.add('visible');
+                    }, parseFloat(delay) * 1000);
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // ── Animate numbers on scroll ──
+        function animateNumber(el, target, suffix = '') {
+            let start = 0;
+            const duration = 1500;
+            const step = (timestamp) => {
+                if (!start) start = timestamp;
+                const progress = Math.min((timestamp - start) / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                el.textContent = Math.floor(eased * target).toLocaleString() + suffix;
+                if (progress < 1) requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+        }
+
+        // ── Navbar scroll effect ──
+        const nav = document.querySelector('nav');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 20) {
+                nav.style.background = 'rgba(10, 15, 30, 0.95)';
+            } else {
+                nav.style.background = '';
+            }
+        });
+
+        // ── Auto redirect if already logged in ──
+        document.addEventListener('DOMContentLoaded', async () => {
+            const supabaseUrl = 'https://ueurypvmhujobihhwfai.supabase.co';
+            const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOnN1cGFiYXNlIiwicmVmIjoidWV1cnlwdm1odWpvaWJoZndmYWkiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc3MzE0NDUxNiwiZXhwIjoyMDg4NzIwNTE2fQ.R1uXjCeW9wNNiBV6gFAhopO36u-RLCllCjnfWSZEq6E';
+
+            try {
+                const { createClient } = supabase;
+                const client = createClient(supabaseUrl, supabaseKey);
+                const { data: { session } } = await client.auth.getSession();
+                if (session) {
+                    window.location.href = 'dashboard.html';
+                }
+            } catch (e) {
+                // Not logged in, stay on landing page
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</body>
+</html>

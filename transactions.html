@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transactions - IshFinance</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='url(%23g)'/%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%233b82f6'/%3E%3Cstop offset='1' stop-color='%236366f1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none' d='M16 10c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M16 10V9m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1'/%3E%3C/svg%3E">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-[#0f172a] text-slate-200 font-sans selection:bg-indigo-500/30">
+
+    <div id="sidebar-container"></div>
+
+    <main class="ml-0 sm:ml-64 min-h-screen flex flex-col transition-all duration-300 relative">
+        <header class="py-4 sm:h-20 sm:py-0 flex flex-row items-center justify-between px-4 sm:px-8 border-b border-slate-800/50 bg-slate-900/50 backdrop-blur-md sticky top-0 z-30 gap-2 sm:gap-4">
+            <div class="flex flex-col min-w-0">
+                <h1 class="text-lg sm:text-2xl font-bold text-white tracking-tight truncate">Transactions</h1>
+                <p class="text-xs sm:text-sm text-slate-400 font-medium mt-1 hidden sm:block md:hidden lg:block truncate">Track income & expenses</p>
+            </div>
+            <button onclick="openTransactionModal()" class="btn-primary px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-lg shadow-indigo-500/20 text-white flex items-center shrink-0">
+                <svg class="w-4 h-4 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                <span class="hidden sm:inline">Add Transaction</span>
+            </button>
+        </header>
+
+        <div class="p-8 flex-1 w-full space-y-6">
+            <div class="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full filter blur-[100px] -z-10 pointer-events-none"></div>
+
+            <div class="glass-panel p-6 rounded-3xl">
+                <!-- Header tools -->
+                <div class="flex flex-col sm:flex-row justify-between items-center mb-6 space-y-4 sm:space-y-0">
+                    <div class="relative w-full sm:w-72">
+                        <svg class="absolute left-3 top-3.5 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <input type="text" id="search-tx" onkeyup="filterTx()" class="input-field block w-full pl-10 pr-4 py-2.5 rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none" placeholder="Search transactions...">
+                    </div>
+                </div>
+
+                <!-- Transaction List -->
+                <div id="transactions-list" class="space-y-4">
+                    <div class="text-center py-10">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mb-4"></div>
+                        <p class="text-slate-400">Loading transactions...</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal for Adding Transaction -->
+    <div id="transaction-modal" class="fixed inset-0 z-50 hidden items-center justify-center">
+        <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onclick="closeTransactionModal()"></div>
+        <div class="relative bg-slate-800 border border-slate-700/50 rounded-3xl p-6 sm:p-8 max-w-md w-full mx-4 shadow-2xl modal-pop max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6 sticky top-0 bg-slate-800 z-10 py-2">
+                <h3 class="text-xl font-bold text-white tracking-tight">Record Transaction</h3>
+                <button onclick="closeTransactionModal()" class="text-slate-400 hover:text-white transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <form id="transaction-form" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-1">Type</label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="tx-type" value="expense" class="peer sr-only" onchange="updateCatDropdown()" checked>
+                            <div class="text-center px-4 py-3 rounded-xl border border-slate-600 font-medium text-slate-300 peer-checked:bg-pink-500/20 peer-checked:border-pink-500/50 peer-checked:text-pink-400 transition-all">Expense</div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="tx-type" value="income" class="peer sr-only" onchange="updateCatDropdown()">
+                            <div class="text-center px-4 py-3 rounded-xl border border-slate-600 font-medium text-slate-300 peer-checked:bg-emerald-500/20 peer-checked:border-emerald-500/50 peer-checked:text-emerald-400 transition-all">Income</div>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-1">Amount</label>
+                    <input type="number" step="0.01" min="0.01" id="tx-amount" required class="input-field block w-full px-4 py-3 rounded-xl text-white placeholder-slate-500 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/50" placeholder="0.00">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-400 mb-1">Account</label>
+                        <select id="tx-account" required class="input-field block w-full px-4 py-3 rounded-xl text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 bg-slate-800/50 border border-slate-700"></select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-400 mb-1">Category</label>
+                        <select id="tx-category" required class="input-field block w-full px-4 py-3 rounded-xl text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 bg-slate-800/50 border border-slate-700"></select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-1">Date</label>
+                    <input type="date" id="tx-date" required class="input-field block w-full px-4 py-3 rounded-xl text-slate-200 focus:outline-none bg-slate-800 border border-slate-700">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-1">Description</label>
+                    <input type="text" id="tx-desc" placeholder="Optional notes" class="input-field block w-full px-4 py-3 rounded-xl text-slate-200 focus:outline-none bg-slate-800 border border-slate-700">
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" id="tx-submit" class="w-full btn-primary py-3.5 rounded-xl text-white font-bold shadow-lg flex justify-center items-center">
+                        Add Transaction
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+    <script src="app-utils.js"></script>
+    <script src="sidebar.js"></script>
+    <script>
+        let currentUser = null;
+        let categoriesData = [];
+        let accountsData = [];
+
+        // XSS protection helper
+        function escHtml(str) {
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+             if(typeof supabaseClient === 'undefined') return;
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) {
+                window.location.href = 'login.html';
+                return;
+            }
+            currentUser = session.user;
+            document.getElementById('tx-date').valueAsDate = new Date();
+            
+            await fetchDropdownData();
+            loadTransactions();
+        });
+
+        async function fetchDropdownData() {
+            // Fetch Accounts
+            const accRes = await supabaseClient.from('accounts').select('id, name').order('name');
+            if(accRes.data) accountsData = accRes.data;
+
+            const accSelect = document.getElementById('tx-account');
+            accSelect.innerHTML = accountsData.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+
+            // Fetch Categories
+            const catRes = await supabaseClient.from('categories').select('id, name, type').order('name');
+            if(catRes.data) categoriesData = catRes.data;
+
+            updateCatDropdown();
+        }
+
+        function updateCatDropdown() {
+            const type = document.querySelector('input[name="tx-type"]:checked').value;
+            const filtered = categoriesData.filter(c => c.type === type);
+            const catSelect = document.getElementById('tx-category');
+            catSelect.innerHTML = filtered.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        }
+
+        async function loadTransactions() {
+            const list = document.getElementById('transactions-list');
+            try {
+                // Fetch joined data
+                const { data, error } = await supabaseClient
+                    .from('transactions')
+                    .select('*, accounts(name), categories(name, color)')
+                    .order('date', { ascending: false })
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                if(data.length === 0) {
+                     list.innerHTML = `
+                     <div class="text-center py-16 border-2 border-dashed border-slate-700/50 rounded-2xl">
+                         <div class="w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-400">
+                             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                         </div>
+                         <p class="text-slate-400 font-medium">No transactions added yet.</p>
+                     </div>`;
+                     return;
+                }
+
+                // Calculate hex to rgb
+                const hexToRgb = hex => {
+                    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                    return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '99, 102, 241';
+                };
+
+                let html = '';
+                data.forEach(tx => {
+                    const isIncome = tx.type === 'income';
+                    const amountClass = isIncome ? 'text-emerald-400' : 'text-white';
+                    const amountSign = isIncome ? '+' : '-';
+                    const colorHex = tx.categories?.color || '#3b82f6';
+                    const rgb = hexToRgb(colorHex);
+
+                    html += `
+                    <div class="tx-item flex items-center justify-between p-4 bg-slate-800/30 hover:bg-slate-800/80 rounded-2xl transition-colors border border-slate-700/50" data-search="${(tx.description||'').toLowerCase()} ${tx.categories?.name?.toLowerCase()}">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background-color: rgba(${rgb}, 0.15); color: ${colorHex}">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                            </div>
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <h4 class="font-bold text-slate-200 capitalize">${tx.categories?.name || 'Uncategorized'}</h4>
+                                    ${tx.description ? `<span class="text-xs text-slate-500 font-medium bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700">${tx.description}</span>` : ''}
+                                </div>
+                                <p class="text-xs text-slate-500 font-bold mt-1 tracking-wider uppercase">${tx.date} • ${tx.accounts?.name || 'Default Account'}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-6">
+                            <span class="font-bold text-lg ${amountClass}">${amountSign} ${formatCurrency(tx.amount)}</span>
+                            <button onclick="deleteTx('${tx.id}', '${tx.account_id}', ${tx.amount}, '${tx.type}')" class="text-slate-600 hover:text-red-500 transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
+                    </div>`;
+                });
+
+                list.innerHTML = html;
+
+            } catch (error) {
+                console.error("Error loading tx", error);
+                list.innerHTML = `<div class="text-center py-10 text-red-400">Error loading. Please refresh.</div>`;
+            }
+        }
+
+        // Add Logic
+        document.getElementById('transaction-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if(accountsData.length === 0) {
+                await customAlert("Please add a bank account / wallet first from the Accounts page!");
+                return;
+            }
+
+            const btn = document.getElementById('tx-submit');
+            btn.innerHTML = 'Saving...';
+            btn.disabled = true;
+
+            const type = document.querySelector('input[name="tx-type"]:checked').value;
+            const amount = parseFloat(document.getElementById('tx-amount').value);
+
+            if (!amount || amount <= 0) {
+                await customAlert('Please enter a valid amount greater than 0.');
+                btn.innerHTML = 'Add Transaction'; btn.disabled = false;
+                return;
+            }
+            const account_id = document.getElementById('tx-account').value;
+            const category_id = document.getElementById('tx-category').value;
+            const tx_date = document.getElementById('tx-date').value;
+            const description = document.getElementById('tx-desc').value;
+
+            try {
+                // Insert transaction
+                const { error: txError } = await supabaseClient
+                    .from('transactions')
+                    .insert([{ 
+                        user_id: currentUser.id,
+                        type, amount, account_id, category_id,
+                        date: tx_date, description
+                    }]);
+                if (txError) throw txError;
+
+                // Atomic balance update — RPC preferred, fallback to read-write
+                const delta = type === 'income' ? amount : -amount;
+                const { error: rpcErr } = await supabaseClient.rpc('increment_account_balance', {
+                    p_account_id: account_id, p_delta: delta
+                });
+                if (rpcErr) {
+                    // Fallback: read then write (slight race condition risk on concurrent saves)
+                    const { data: accData } = await supabaseClient.from('accounts').select('balance').eq('id', account_id).single();
+                    const newBalance = Number(accData.balance) + delta;
+                    await supabaseClient.from('accounts').update({ balance: newBalance }).eq('id', account_id);
+                }
+
+                
+                closeTransactionModal();
+                document.getElementById('tx-amount').value = '';
+                document.getElementById('tx-desc').value = '';
+                loadTransactions();
+
+            } catch (error) {
+                await customAlert('Failed to save transaction: ' + error.message);
+            } finally {
+                btn.innerHTML = 'Add Transaction';
+                btn.disabled = false;
+            }
+        });
+
+        async function deleteTx(id, accId, amount, type) {
+            const isConfirmed = await customConfirm("Delete this transaction? This will revert your account balance change.");
+            if(!isConfirmed) return;
+            try {
+                const { error } = await supabaseClient.from('transactions').delete().eq('id', id);
+                if (error) throw error;
+
+                // Atomic balance revert — RPC preferred, fallback to read-write
+                const revertDelta = type === 'income' ? -Number(amount) : Number(amount);
+                const { error: rpcErr2 } = await supabaseClient.rpc('increment_account_balance', {
+                    p_account_id: accId, p_delta: revertDelta
+                });
+                if (rpcErr2) {
+                    const { data: accData } = await supabaseClient.from('accounts').select('balance').eq('id', accId).single();
+                    const newBalance = Number(accData.balance) + revertDelta;
+                    await supabaseClient.from('accounts').update({ balance: newBalance }).eq('id', accId);
+                }
+
+                loadTransactions();
+            } catch (error) {
+                await customAlert("Could not delete tx: " + error.message);
+            }
+        }
+
+        // Search Filter
+        function filterTx() {
+            const query = document.getElementById('search-tx').value.toLowerCase();
+            const items = document.querySelectorAll('.tx-item');
+            items.forEach(el => {
+                const terms = el.getAttribute('data-search');
+                if(terms.includes(query)) el.style.display = 'flex';
+                else el.style.display = 'none';
+            });
+        }
+
+        // Modals
+        async function openTransactionModal() {
+            if(accountsData.length === 0) {
+                await customAlert("You need to setup at least one Account (Wallet/Bank) before adding transactions.");
+                window.location.href = 'accounts.html';
+                return;
+            }
+            if(categoriesData.length === 0) {
+                await customAlert("You need to setup at least one category.");
+                window.location.href = 'categories.html';
+                return;
+            }
+            document.getElementById('transaction-modal').classList.remove('hidden');
+            document.getElementById('transaction-modal').classList.add('flex');
+        }
+
+        function closeTransactionModal() {
+            document.getElementById('transaction-modal').classList.add('hidden');
+            document.getElementById('transaction-modal').classList.remove('flex');
+        }
+    </script>
+</body>
+</html>

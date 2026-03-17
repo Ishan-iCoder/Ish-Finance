@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - IshFinance</title>
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='url(%23g)'/%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%233b82f6'/%3E%3Cstop offset='1' stop-color='%236366f1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none' d='M16 10c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M16 10V9m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1'/%3E%3C/svg%3E">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        @keyframes notifIn  { from{opacity:0;transform:scale(.95) translateY(-8px)} to{opacity:1;transform:scale(1) translateY(0)} }
+        @keyframes notifOut { from{opacity:1;transform:scale(1) translateY(0)} to{opacity:0;transform:scale(.95) translateY(-8px)} }
+        @keyframes bellShake {
+            0%,100%{transform:rotate(0)} 20%{transform:rotate(-15deg)}
+            40%{transform:rotate(15deg)} 60%{transform:rotate(-10deg)} 80%{transform:rotate(8deg)}
+        }
+        #notif-panel.is-open  { animation: notifIn  .22s cubic-bezier(.16,1,.3,1) forwards; }
+        #notif-panel.is-close { animation: notifOut .18s ease forwards; }
+        .bell-shake { animation: bellShake .6s ease; }
+        .notif-item {
+            display:flex; align-items:flex-start; gap:.75rem;
+            padding:.75rem; border-radius:.875rem; cursor:pointer;
+            transition:background .15s; position:relative;
+        }
+        .notif-item:hover { background:rgba(51,65,85,.5); }
+        .notif-item.unread { padding-left:1.5rem; }
+        .notif-item.unread::before {
+            content:''; position:absolute; left:.6rem; top:1.1rem;
+            width:6px; height:6px; border-radius:50%; background:#6366f1;
+        }
+        #notif-list::-webkit-scrollbar { width:4px; }
+        #notif-list::-webkit-scrollbar-thumb { background:rgba(148,163,184,.2); border-radius:4px; }
+    </style>
+</head>
+
+<body class="bg-[#0f172a] text-slate-200 font-sans selection:bg-indigo-500/30">
+
+    <!-- Sidebar Injected Here -->
+    <div id="sidebar-container"></div>
+
+    <!-- Main ContentWrapper -->
+    <main class="ml-0 sm:ml-64 min-h-screen flex flex-col transition-all duration-300">
+
+        <!-- Header Section -->
+        <header
+            class="py-4 sm:h-20 sm:py-0 flex flex-row items-center justify-between px-4 sm:px-8 border-b border-slate-800/50 bg-slate-900/50 backdrop-blur-md sticky top-0 z-30 gap-2 sm:gap-4">
+            <div class="flex flex-col min-w-0">
+                <h1 class="text-lg sm:text-2xl font-bold text-white tracking-tight truncate">Overview</h1>
+                <p class="text-xs sm:text-sm text-slate-400 font-medium mt-1 hidden sm:block md:hidden lg:block truncate"
+                    id="greetingUser">Welcome back to IshFinance</p>
+            </div>
+
+            <div class="flex items-center space-x-3 sm:space-x-6 shrink-0">
+                <!-- Notification Bell + Dropdown -->
+                <div class="relative" id="notif-wrapper">
+                    <button id="notif-bell-btn"
+                        class="relative p-2 text-slate-400 hover:text-white transition-all duration-200 hover:bg-slate-800/60 rounded-xl">
+                        <span id="notif-badge"
+                            class="hidden absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1
+                                   bg-gradient-to-br from-pink-500 to-rose-500
+                                   text-white text-[10px] font-extrabold rounded-full
+                                   flex items-center justify-center
+                                   ring-2 ring-slate-900 animate-bounce"></span>
+                        <svg id="notif-bell-icon" class="w-6 h-6 transition-transform duration-300"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
+                            </path>
+                        </svg>
+                    </button>
+
+                    <!-- Notification Dropdown Panel -->
+                    <div id="notif-panel"
+                        class="hidden absolute right-0 top-full mt-3 w-[360px] max-w-[calc(100vw-2rem)]
+                               bg-slate-900/95 backdrop-blur-xl border border-slate-700/60
+                               rounded-2xl shadow-2xl shadow-black/50 z-50">
+
+                        <!-- Header -->
+                        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-800/70">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 bg-indigo-500/20 rounded-lg flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                                    </svg>
+                                </div>
+                                <h3 class="text-sm font-bold text-white">Notifications</h3>
+                            </div>
+                            <button id="notif-mark-all"
+                                class="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors px-2 py-1 rounded-lg hover:bg-indigo-500/10">
+                                Mark all read
+                            </button>
+                        </div>
+
+                        <!-- List -->
+                        <div id="notif-list" class="max-h-[400px] overflow-y-auto py-2 space-y-0.5 px-2">
+                            <div id="notif-loading" class="flex flex-col gap-3 p-4">
+                                <div class="h-3 w-3/4 bg-slate-800 rounded-full animate-pulse"></div>
+                                <div class="h-3 w-1/2 bg-slate-800 rounded-full animate-pulse"></div>
+                                <div class="h-3 w-2/3 bg-slate-800 rounded-full animate-pulse"></div>
+                            </div>
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="px-5 py-3 border-t border-slate-800/70 text-center">
+                            <a href="settings.html" class="text-xs font-semibold text-slate-500 hover:text-slate-300 transition-colors">
+                                Notification Settings
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Avatar (click to go to Settings) -->
+                <a href="settings.html" title="Go to Settings"
+                    class="h-10 w-10 rounded-full border-2 border-indigo-500/30 overflow-hidden shadow-lg shadow-indigo-500/20 hover:border-indigo-400 transition-all hover:scale-105">
+                    <img id="userAvatar" src="https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff"
+                        alt="User Profile" class="w-full h-full object-cover">
+                </a>
+            </div>
+        </header>
+
+        <!-- Dashboard Widgets Area -->
+        <div class="p-8 flex-1 space-y-8 overflow-y-auto w-full relative">
+
+            <!-- Blobs Behind Content -->
+            <div
+                class="absolute top-0 right-0 w-96 h-96 bg-indigo-500/20 rounded-full filter blur-[100px] -z-10 pointer-events-none">
+            </div>
+            <div
+                class="absolute bottom-0 left-0 w-96 h-96 bg-pink-500/10 rounded-full filter blur-[100px] -z-10 pointer-events-none">
+            </div>
+
+            <!-- Stats Row -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Stat Card: Total Balance -->
+                <div class="glass-panel p-6 rounded-3xl relative overflow-hidden group">
+                    <div
+                        class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full -mr-10 -mt-10 transform group-hover:scale-110 transition-transform duration-500">
+                    </div>
+                    <div class="flex justify-between items-start relative z-10">
+                        <div>
+                            <p class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Total Balance</p>
+                            <h2 id="dash-balance"
+                                class="font-extrabold text-white whitespace-nowrap overflow-hidden text-3xl">Rs 0.00
+                            </h2>
+                        </div>
+                        <div class="p-3 bg-indigo-500/20 text-indigo-400 rounded-xl">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z">
+                                </path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stat Card: Income -->
+                <div class="glass-panel p-6 rounded-3xl relative overflow-hidden group">
+                    <div
+                        class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full -mr-10 -mt-10 transform group-hover:scale-110 transition-transform duration-500">
+                    </div>
+                    <div class="flex justify-between items-start relative z-10">
+                        <div>
+                            <p class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Monthly Income
+                            </p>
+                            <h2 id="dash-income"
+                                class="font-extrabold text-white whitespace-nowrap overflow-hidden text-3xl">Rs 0.00
+                            </h2>
+                        </div>
+                        <div class="p-3 bg-emerald-500/20 text-emerald-400 rounded-xl">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stat Card: Expenses -->
+                <div class="glass-panel p-6 rounded-3xl relative overflow-hidden group">
+                    <div
+                        class="absolute top-0 right-0 w-32 h-32 bg-pink-500/10 rounded-full -mr-10 -mt-10 transform group-hover:scale-110 transition-transform duration-500">
+                    </div>
+                    <div class="flex justify-between items-start relative z-10">
+                        <div>
+                            <p class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Monthly Expenses
+                            </p>
+                            <h2 id="dash-expense"
+                                class="font-extrabold text-white whitespace-nowrap overflow-hidden text-3xl">Rs 0.00
+                            </h2>
+                        </div>
+                        <div class="p-3 bg-pink-500/20 text-pink-400 rounded-xl">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Layout Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Recent Transactions Area -->
+                <div class="lg:col-span-2 glass-panel rounded-3xl p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-bold text-white tracking-tight">Recent Transactions</h3>
+                        <a href="transactions.html"
+                            class="text-sm font-bold text-indigo-400 hover:text-indigo-300 transition-colors">View
+                            All</a>
+                    </div>
+                    <div id="dash-tx-list" class="space-y-4">
+                        <div
+                            class="text-center py-6 border-2 border-dashed border-slate-700/50 rounded-2xl flex flex-col items-center justify-center">
+                            <div
+                                class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mb-4">
+                            </div>
+                            <p class="text-sm font-medium text-slate-400">Loading recent trends...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Sidebar (Cards/Quick actions) -->
+                <div class="space-y-6">
+                    <!-- Savings Goal Mini -->
+                    <div class="glass-panel rounded-3xl p-6" id="dash-goal-widget">
+                        <h3 class="text-lg font-bold text-white tracking-tight mb-4">Latest Goal</h3>
+                        <div class="bg-indigo-900/40 rounded-2xl p-6 border border-indigo-500/20 text-center">
+                            <p class="text-sm font-medium text-indigo-300">Loading goal...</p>
+                        </div>
+                    </div>
+
+                    <!-- Add Quick Transaction -->
+                    <a href="transactions.html"
+                        class="w-full btn-primary py-4 px-6 rounded-2xl flex items-center justify-center space-x-2 shadow-lg shadow-indigo-500/30 hover:opacity-90 transition-opacity">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
+                            </path>
+                        </svg>
+                        <span class="font-bold text-sm text-white">Add New Transaction</span>
+                    </a>
+
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+    <script src="app-utils.js"></script>
+    <script src="sidebar.js"></script>
+
+    <!-- User Fetching Logic & Dashboard App Data -->
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Supabase Client expects loaded from supabase-client.js
+            if (typeof supabaseClient === 'undefined') return;
+
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Always fetch the freshest user data (so avatar/name reflects latest settings changes)
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            const activeUser = user || session.user;
+            const meta       = activeUser.user_metadata || {};
+            const firstName  = meta.first_name || activeUser.email?.split('@')[0] || 'User';
+
+            document.getElementById('greetingUser').innerText = `Welcome back, ${firstName}! 👋`;
+
+            const avatarUrl = meta.avatar_url ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(firstName)}&background=0D8ABC&color=fff`;
+            document.getElementById('userAvatar').src = avatarUrl;
+
+            fetchDashboardStats();
+            // Run notification checks (budget alerts, goal milestones, monthly summary)
+            runNotificationChecks();
+            // Populate the bell notification panel
+            if (window.loadNotifPanel) window.loadNotifPanel();
+        });
+
+        async function fetchDashboardStats() {
+            try {
+                // 1. Total Balance from Accounts
+                const accRes = await supabaseClient.from('accounts').select('balance');
+                let totalBal = 0;
+                if (accRes.data) {
+                    accRes.data.forEach(a => totalBal += Number(a.balance));
+                }
+                document.getElementById('dash-balance').innerText = formatCurrency(totalBal);
+                scaleStat('dash-balance', totalBal);
+
+                // Current Period Dates for Income/Expense
+                const today = new Date();
+                const y = today.getFullYear();
+                const m = String(today.getMonth() + 1).padStart(2, '0');
+                const startOfMonth = `${y}-${m}-01`;
+
+                let nextM = today.getMonth() + 2;
+                let nextY = y;
+                if (nextM > 12) { nextM = 1; nextY++; }
+                const endOfMonth = `${nextY}-${String(nextM).padStart(2, '0')}-01`;
+
+                // 2 & 3. Income and Expense Sums for this month
+                const txMonthRes = await supabaseClient.from('transactions').select('amount, type')
+                    .gte('date', startOfMonth).lt('date', endOfMonth);
+
+                let totInc = 0, totExp = 0;
+                if (txMonthRes.data) {
+                    txMonthRes.data.forEach(tx => {
+                        if (tx.type === 'income') totInc += Number(tx.amount);
+                        else if (tx.type === 'expense') totExp += Number(tx.amount);
+                    });
+                }
+
+                document.getElementById('dash-income').innerText = formatCurrency(totInc);
+                scaleStat('dash-income', totInc);
+                document.getElementById('dash-expense').innerText = formatCurrency(totExp);
+                scaleStat('dash-expense', totExp);
+
+                // 4. Recent Transactions (last 3)
+                const recTxRes = await supabaseClient.from('transactions')
+                    .select('amount, type, description, date, categories(name, color)')
+                    .order('date', { ascending: false }).order('created_at', { ascending: false })
+                    .limit(3);
+
+                const txList = document.getElementById('dash-tx-list');
+                if (!recTxRes.data || recTxRes.data.length === 0) {
+                    txList.innerHTML = `<div class="text-center py-6 border-2 border-dashed border-slate-700/50 rounded-2xl"><p class="text-sm font-medium text-slate-400">No transactions yet.</p></div>`;
+                } else {
+                    const hexToRgb = hex => {
+                        const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                        return r ? `${parseInt(r[1], 16)}, ${parseInt(r[2], 16)}, ${parseInt(r[3], 16)}` : '99, 102, 241';
+                    };
+
+                    let html = '';
+                    recTxRes.data.forEach(tx => {
+                        const isIncome = tx.type === 'income';
+                        const sign = isIncome ? '+' : '-';
+                        const colHtml = isIncome ? 'text-emerald-400' : 'text-white';
+                        const hex = tx.categories?.color || '#3b82f6';
+                        const rgb = hexToRgb(hex);
+
+                        html += `
+                        <div class="flex items-center justify-between p-4 bg-slate-800/50 hover:bg-slate-800 rounded-2xl transition-colors border border-slate-700/50">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-12 h-12 rounded-xl flex items-center justify-center font-bold" style="background-color: rgba(${rgb},0.2); color: ${hex}">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-200 capitalize">${tx.categories?.name || 'Uncategorized'}</h4>
+                                    <p class="text-xs text-slate-400 font-medium">${tx.date} ${tx.description ? '• ' + tx.description : ''}</p>
+                                </div>
+                            </div>
+                            <span class="font-bold ${colHtml}">${isIncome ? '+' : '-'} ${formatCurrency(tx.amount, {noDecimals:true})}</span>
+                        </div>`;
+                    });
+                    txList.innerHTML = html;
+                }
+
+                // 5. Mini Savings Goal (most recent incomplete)
+                const goalRes = await supabaseClient.from('savings_goals')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+
+                const goalWidget = document.getElementById('dash-goal-widget');
+                if (!goalRes.data || goalRes.data.length === 0) {
+                    goalWidget.innerHTML = `
+                     <h3 class="text-lg font-bold text-white tracking-tight mb-4">Latest Goal</h3>
+                     <div class="bg-indigo-900/40 rounded-2xl p-6 border border-indigo-500/20 text-center"><p class="text-sm font-medium text-indigo-300">No active savings goals.</p></div>`;
+                } else {
+                    const sg = goalRes.data[0];
+                    const target = Number(sg.target_amount);
+                    const current = Number(sg.current_amount);
+                    let pct = (current / target) * 100;
+                    if (pct > 100) pct = 100;
+
+                    goalWidget.innerHTML = `
+                    <h3 class="text-lg font-bold text-white tracking-tight mb-4">Latest Goal</h3>
+                    <div class="bg-slate-800/80 rounded-2xl p-4 border border-slate-700/50">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-sm font-bold text-slate-200 capitalize">${sg.name}</span>
+                            <span class="text-xs font-bold text-white bg-indigo-500 px-2 py-1 rounded-full">${pct.toFixed(0)}%</span>
+                        </div>
+                        <div class="w-full bg-slate-700 rounded-full h-2.5 mb-2">
+                            <div class="bg-gradient-to-r from-indigo-500 to-blue-500 h-2.5 rounded-full" style="width: ${pct}%"></div>
+                        </div>
+                        <div class="flex justify-between text-xs font-medium text-slate-400">
+                            <span>${formatCurrency(current, {noDecimals:true})}</span>
+                            <span>${formatCurrency(target, {noDecimals:true})}</span>
+                        </div>
+                    </div>`;
+                }
+
+            } catch (err) {
+                console.error("error stats", err);
+            }
+        }  // end fetchDashboardStats
+
+        // ── Auto-scale font size based on digit count ──
+        // Keeps "Rs" and number on the same line even for large amounts
+        function scaleStat(id, amount) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const digits = Math.abs(Math.floor(amount)).toString().length;
+            el.classList.remove('text-3xl', 'text-2xl', 'text-xl', 'text-lg');
+            if (digits <= 5) {
+                el.classList.add('text-3xl');        // ≤ 99,999   →  original size
+            } else if (digits === 6) {
+                el.classList.add('text-2xl');        // 100,000+   →  slightly smaller
+            } else if (digits === 7) {
+                el.classList.add('text-xl');         // 1,000,000+ →  smaller
+            } else {
+                el.classList.add('text-lg');         // 10,000,000+→  compact
+            }
+        }
+    </script>
+
+
+<script>
+(function () {
+    'use strict';
+
+    // ── Storage helpers ────────────────────────────────────────────────────────
+    var READ_KEY = 'ishfinance_notif_read';
+    function getRead() {
+        try { return JSON.parse(localStorage.getItem(READ_KEY) || '[]'); } catch (_) { return []; }
+    }
+    function saveRead(arr) { localStorage.setItem(READ_KEY, JSON.stringify(arr)); }
+    function isRead(id) { return getRead().indexOf(id) !== -1; }
+    function markRead(id) {
+        var arr = getRead();
+        if (arr.indexOf(id) === -1) { arr.push(id); saveRead(arr); }
+    }
+    function markAllRead(ids) {
+        var arr = getRead();
+        ids.forEach(function (id) { if (arr.indexOf(id) === -1) arr.push(id); });
+        saveRead(arr);
+    }
+
+    // ── State ─────────────────────────────────────────────────────────────────
+    var _notifs = [];
+    var _open   = false;
+
+    // ── Panel helpers ─────────────────────────────────────────────────────────
+    function getPanel()  { return document.getElementById('notif-panel'); }
+    function getBadge()  { return document.getElementById('notif-badge'); }
+    function getBellIcon() { return document.getElementById('notif-bell-icon'); }
+    function getList()   { return document.getElementById('notif-list'); }
+
+    function openPanel() {
+        var p = getPanel(); if (!p) return;
+        p.classList.remove('hidden', 'is-close');
+        void p.offsetWidth; // force reflow
+        p.classList.add('is-open');
+        _open = true;
+    }
+    function closePanel() {
+        var p = getPanel(); if (!p || p.classList.contains('hidden')) return;
+        p.classList.remove('is-open');
+        p.classList.add('is-close');
+        setTimeout(function () { p.classList.add('hidden'); p.classList.remove('is-close'); }, 200);
+        _open = false;
+    }
+
+    // ── Badge ─────────────────────────────────────────────────────────────────
+    function updateBadge() {
+        var badge = getBadge(); if (!badge) return;
+        var unread = _notifs.filter(function (n) { return !isRead(n.id); }).length;
+        if (unread > 0) {
+            badge.textContent = unread > 9 ? '9+' : String(unread);
+            badge.classList.remove('hidden');
+            var icon = getBellIcon();
+            if (icon) {
+                icon.classList.add('bell-shake');
+                setTimeout(function () { icon.classList.remove('bell-shake'); }, 700);
+            }
+        } else {
+            badge.classList.add('hidden');
+        }
+    }
+
+    // ── Relative time ─────────────────────────────────────────────────────────
+    function relTime(ts) {
+        var diff = Date.now() - ts;
+        var m = Math.floor(diff / 60000);
+        if (m < 1)  return 'Just now';
+        if (m < 60) return m + 'm ago';
+        var h = Math.floor(m / 60);
+        if (h < 24) return h + 'h ago';
+        return Math.floor(h / 24) + 'd ago';
+    }
+
+    // ── Render list ───────────────────────────────────────────────────────────
+    var TYPE_COLOR = {
+        error:   '#f87171',
+        warning: '#fb923c',
+        success: '#34d399',
+        info:    '#818cf8'
+    };
+
+    function renderList() {
+        var list = getList(); if (!list) return;
+        list.innerHTML = '';
+
+        if (_notifs.length === 0) {
+            var empty = document.createElement('div');
+            empty.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2.5rem 1rem;text-align:center;';
+            empty.innerHTML = '<div style="width:56px;height:56px;background:rgba(51,65,85,.8);border-radius:1rem;display:flex;align-items:center;justify-content:center;font-size:1.75rem;margin-bottom:.75rem;">&#128276;</div>'
+                + '<p style="font-size:.875rem;font-weight:600;color:#e2e8f0;margin:0">All caught up!</p>'
+                + '<p style="font-size:.75rem;color:#64748b;margin:.25rem 0 0">No notifications right now.</p>';
+            list.appendChild(empty);
+            return;
+        }
+
+        _notifs.forEach(function (n) {
+            var unread = !isRead(n.id);
+            var row    = document.createElement('div');
+            row.className = 'notif-item' + (unread ? ' unread' : '');
+
+            // Icon bubble
+            var iconDiv = document.createElement('div');
+            iconDiv.style.cssText = 'width:36px;height:36px;border-radius:.75rem;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;background:' + n.iconBg + ';';
+            iconDiv.textContent = n.icon;
+
+            // Text block
+            var textDiv = document.createElement('div');
+            textDiv.style.cssText = 'flex:1;min-width:0;';
+
+            var titleP = document.createElement('p');
+            titleP.style.cssText = 'font-size:.8125rem;font-weight:700;color:#f1f5f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0;';
+            titleP.textContent = n.title;
+
+            var bodyP = document.createElement('p');
+            bodyP.style.cssText = 'font-size:.75rem;color:#94a3b8;margin:.2rem 0 0;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;';
+            bodyP.textContent = n.body;
+
+            var timeP = document.createElement('p');
+            timeP.style.cssText = 'font-size:.65rem;font-weight:700;color:' + (TYPE_COLOR[n.type] || TYPE_COLOR.info) + ';margin:.4rem 0 0;text-transform:uppercase;letter-spacing:.05em;';
+            timeP.textContent = relTime(n.ts);
+
+            textDiv.appendChild(titleP);
+            textDiv.appendChild(bodyP);
+            textDiv.appendChild(timeP);
+
+            // Dismiss button
+            var xBtn = document.createElement('button');
+            xBtn.style.cssText = 'flex-shrink:0;color:#475569;background:none;border:none;cursor:pointer;padding:4px;border-radius:.5rem;line-height:1;font-size:14px;';
+            xBtn.title = 'Dismiss';
+            xBtn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
+            xBtn.addEventListener('mouseenter', function () { xBtn.style.color = '#cbd5e1'; xBtn.style.background = 'rgba(71,85,105,.5)'; });
+            xBtn.addEventListener('mouseleave', function () { xBtn.style.color = '#475569'; xBtn.style.background = 'none'; });
+            xBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                markRead(n.id);
+                _notifs = _notifs.filter(function (x) { return x.id !== n.id; });
+                renderList();
+                updateBadge();
+            });
+
+            row.appendChild(iconDiv);
+            row.appendChild(textDiv);
+            row.appendChild(xBtn);
+
+            // Row click → navigate
+            row.addEventListener('click', function () {
+                markRead(n.id);
+                window.location.href = n.link;
+            });
+
+            list.appendChild(row);
+        });
+    }
+
+    // ── Currency helper (safe fallback) ───────────────────────────────────────
+    function fmt(amount, noDecimals) {
+        if (typeof window.formatCurrency === 'function') {
+            return window.formatCurrency(amount, { noDecimals: !!noDecimals });
+        }
+        return 'Rs ' + Number(amount).toLocaleString('en-US');
+    }
+
+    // ── Fetch data from Supabase ──────────────────────────────────────────────
+    window.loadNotifPanel = async function () {
+        if (typeof supabaseClient === 'undefined') return;
+        var notifs = [];
+
+        try {
+            var now  = new Date();
+            var y    = now.getFullYear();
+            var m    = String(now.getMonth() + 1).padStart(2, '0');
+            var period    = y + '-' + m;
+            var startDate = period + '-01';
+            var endDt     = new Date(startDate);
+            endDt.setMonth(endDt.getMonth() + 1);
+            var endDate   = endDt.toISOString().slice(0, 10);
+
+            // ── Budget checks ────────────────────────────────────────────────
+            var bgRes = await supabaseClient.from('budgets').select('id,amount,category_id,categories(name)').eq('period', period);
+            var txRes = await supabaseClient.from('transactions').select('category_id,amount').eq('type','expense').gte('date', startDate).lt('date', endDate);
+
+            if (bgRes.data && txRes.data) {
+                var spent = {};
+                txRes.data.forEach(function (tx) { spent[tx.category_id] = (spent[tx.category_id] || 0) + Number(tx.amount); });
+
+                bgRes.data.forEach(function (bg) {
+                    var limit = Number(bg.amount);
+                    var used  = spent[bg.category_id] || 0;
+                    var pct   = limit > 0 ? (used / limit) * 100 : 0;
+                    var name  = (bg.categories && bg.categories.name) ? bg.categories.name : 'Category';
+
+                    if (pct >= 100) {
+                        notifs.push({ id: 'bg_ex_' + bg.id, type: 'error', icon: '🚨', iconBg: 'rgba(239,68,68,.15)',
+                            title: name + ' Budget Exceeded',
+                            body:  pct.toFixed(0) + '% used — ' + fmt(used,true) + ' of ' + fmt(limit,true),
+                            link: 'budgets.html', ts: Date.now() });
+                    } else if (pct >= 80) {
+                        notifs.push({ id: 'bg_warn_' + bg.id, type: 'warning', icon: '⚠️', iconBg: 'rgba(249,115,22,.15)',
+                            title: name + ' Budget at ' + pct.toFixed(0) + '%',
+                            body:  fmt(limit - used, true) + ' remaining of ' + fmt(limit, true),
+                            link: 'budgets.html', ts: Date.now() - 60000 });
+                    }
+                });
+            }
+
+            // ── Savings goals ────────────────────────────────────────────────
+            var gRes = await supabaseClient.from('savings_goals').select('id,name,target_amount,current_amount');
+            if (gRes.data) {
+                var MS = [100, 75, 50, 25];
+                gRes.data.forEach(function (g) {
+                    var target  = Number(g.target_amount);
+                    var current = Number(g.current_amount);
+                    if (target <= 0) return;
+                    var pct = (current / target) * 100;
+                    for (var i = 0; i < MS.length; i++) {
+                        if (pct >= MS[i]) {
+                            var ms    = MS[i];
+                            var emoji = ms === 100 ? '🎉' : ms === 75 ? '🔥' : ms === 50 ? '💪' : '⭐';
+                            var bg    = ms === 100 ? 'rgba(16,185,129,.15)' : 'rgba(99,102,241,.15)';
+                            notifs.push({ id: 'goal_' + g.id + '_' + ms,
+                                type: ms === 100 ? 'success' : 'info',
+                                icon: emoji, iconBg: bg,
+                                title: g.name + ' — ' + ms + '% Reached!',
+                                body:  fmt(current,true) + ' of ' + fmt(target,true) + ' saved',
+                                link:  'savings.html', ts: Date.now() - 120000 });
+                            break;
+                        }
+                    }
+                });
+            }
+
+            // ── Negative account balances ────────────────────────────────────
+            var aRes = await supabaseClient.from('accounts').select('id,name,balance');
+            if (aRes.data) {
+                aRes.data.forEach(function (a) {
+                    if (Number(a.balance) < 0) {
+                        notifs.push({ id: 'neg_' + a.id, type: 'error', icon: '🔴', iconBg: 'rgba(239,68,68,.12)',
+                            title: a.name + ' — Negative Balance',
+                            body:  'Current balance: ' + fmt(a.balance, false),
+                            link:  'accounts.html', ts: Date.now() - 200000 });
+                    }
+                });
+            }
+
+            // ── Previous month summary ───────────────────────────────────────
+            var prevDate  = new Date(y, now.getMonth() - 1, 1);
+            var prevStart = prevDate.getFullYear() + '-' + String(prevDate.getMonth() + 1).padStart(2,'0') + '-01';
+            var prevEndDt = new Date(prevStart); prevEndDt.setMonth(prevEndDt.getMonth() + 1);
+            var prevEnd   = prevEndDt.toISOString().slice(0, 10);
+            var MONTHS    = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+            var smRes = await supabaseClient.from('transactions').select('amount,type').gte('date', prevStart).lt('date', prevEnd);
+            if (smRes.data && smRes.data.length > 0) {
+                var inc = 0, exp = 0;
+                smRes.data.forEach(function (tx) { if (tx.type === 'income') inc += Number(tx.amount); else exp += Number(tx.amount); });
+                var net = inc - exp;
+                notifs.push({ id: 'summary_' + prevDate.getMonth(),
+                    type: net >= 0 ? 'success' : 'warning',
+                    icon: net >= 0 ? '📈' : '📉',
+                    iconBg: net >= 0 ? 'rgba(16,185,129,.15)' : 'rgba(249,115,22,.15)',
+                    title: MONTHS[prevDate.getMonth()] + ' Summary',
+                    body:  'Income ' + fmt(inc,true) + '  ·  Expenses ' + fmt(exp,true) + '  ·  Net ' + (net >= 0 ? '+' : '') + fmt(net,true),
+                    link:  'transactions.html', ts: Date.now() - 300000 });
+            }
+
+        } catch (e) { console.warn('Notif panel load error:', e); }
+
+        _notifs = notifs;
+        renderList();
+        updateBadge();
+    };
+
+    // ── Wire up controls once DOM is ready ───────────────────────────────────
+    document.addEventListener('DOMContentLoaded', function () {
+        var bellBtn  = document.getElementById('notif-bell-btn');
+        var wrapper  = document.getElementById('notif-wrapper');
+        var markAll  = document.getElementById('notif-mark-all');
+
+        if (bellBtn) {
+            bellBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                _open ? closePanel() : openPanel();
+            });
+        }
+
+        if (markAll) {
+            markAll.addEventListener('click', function () {
+                markAllRead(_notifs.map(function (n) { return n.id; }));
+                renderList();
+                updateBadge();
+            });
+        }
+
+        document.addEventListener('click', function (e) {
+            if (_open && wrapper && !wrapper.contains(e.target)) closePanel();
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && _open) closePanel();
+        });
+    });
+})();
+
+</script>
+</body>
+
+</html>
